@@ -5,23 +5,23 @@ RUN npm install -g pnpm
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json pnpm-lock.yaml pnpm-workspace.yaml ./
-
-# Copy workspace packages
-COPY packages ./packages
+# Copy everything
+COPY . .
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # Build
 RUN pnpm build
 
-# Set environment
+# Debug: list built files to see structure
+RUN echo "=== Build structure ===" && find . -name "index.js" -path "*/build/*" || echo "No build found"
+
+# Environment
 ENV NODE_ENV=production
 ENV PORT=3000
 
 EXPOSE 3000
 
-# Start server
-CMD ["node", "packages/mcp-server-supabase/build/index.js", "--transport", "http", "--port", "3000"]
+# Auto-detect the correct path
+CMD sh -c 'ENTRY=$(find . -name "index.js" -path "*/build/*" -type f | head -1) && echo "Starting: $ENTRY" && node "$ENTRY" --transport http --port 3000'
